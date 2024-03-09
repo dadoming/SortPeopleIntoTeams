@@ -1,3 +1,4 @@
+import csv
 import random
 
 MINIMUM_TEAM_SIZE = 2
@@ -42,10 +43,14 @@ if names:
 else:
     print(f"\nAll names have been successfully distributed")
 
-import csv
 with open('teams.csv', 'w') as f:
     writer = csv.writer(f)
-    writer.writerow(['Team', 'Team Size', '1', '2', '3', '4'])
-    writer.writerows([f'Team {i}', size, *team] for size, team_list in teams.items() for i, team in enumerate(team_list, start=1))
+    writer.writerow(['Team', 'Size', '1', '2', '3', '4'])
+    index = 1
+    for size, team_list in teams.items():
+        for i, team in enumerate(team_list, start=1):
+            writer.writerow([f'{index}', len(team), *team])
+            index += 1
+
     if names:
         writer.writerow(['Remaining names', '', *names])

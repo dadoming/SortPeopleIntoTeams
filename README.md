@@ -4,6 +4,20 @@
 - Create a file named names.txt and put the names of the people you want to sort into teams in it, one name per line.
 - Run main.py and it will create a file named teams.csv with the teams in it.
 
+### Requirements:
+- Python 3.8
+- csvtool (optional, to make the teams.csv file more readable on the terminal)
+
+```bash
+sudo apt-get update && sudo apt-get upgrade
+```
+```bash
+sudo apt-get install python3.8
+```
+```bash
+sudo apt-get install csvtool
+```
+
 ## To Run:
 ```bash
 git clone https://github.com/dadoming/SortPeopleIntoTeams.git
@@ -13,6 +27,9 @@ cd SortPeopleIntoTeams
 ```
 ```bash
 python3 main.py
+```
+```bash
+csvtool readable teams.csv
 ```
 
 ### To add:
