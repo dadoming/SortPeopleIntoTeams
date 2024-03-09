@@ -1,8 +1,8 @@
 # Sort People into teams
 
-- Go into main.py and set the minimum and maximum team sizes.
-- Create a file named names.txt and put the names of the people you want to sort into teams in it, one name per line.
-- Run main.py and it will create a file named teams.csv with the teams in it.
+1. Go into main.py and set the minimum and maximum team sizes.
+2. Create a file named names.txt and put the names of the people you want to sort into teams in it, one name per line.
+3. Run main.py and it will create a file named teams.csv with the teams in it.
 
 ### Requirements:
 - Python 3.8
