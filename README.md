@@ -35,3 +35,4 @@ csvtool readable teams.csv
 ### To add:
 - Add a way if there are 6 people, for example, make it sort into 2 teams of 3 instead of 3 teams of 2.
 - Add a way to insert remaining people into teams with less people.
+- Eventually add an Intra API setting to sort people into teams based on their levels.
