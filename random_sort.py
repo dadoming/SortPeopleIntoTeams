@@ -1,15 +1,21 @@
 import csv
 import random
 
+## Insert values based on your needs here ##
 MINIMUM_TEAM_SIZE = 2
 MAXIMUM_TEAM_SIZE = 4
 
-if not MINIMUM_TEAM_SIZE or not MAXIMUM_TEAM_SIZE or MINIMUM_TEAM_SIZE > MAXIMUM_TEAM_SIZE:
+if (
+    not MINIMUM_TEAM_SIZE
+    or not MAXIMUM_TEAM_SIZE
+    or MINIMUM_TEAM_SIZE > MAXIMUM_TEAM_SIZE
+):
     print("Wrong team size specification")
     exit()
 
 names = []
-with open('names.txt') as f:
+## Read from file here, change if needed ##
+with open("names.txt") as f:
     names = f.read().splitlines()
 if not names:
     print("No names specified")
@@ -39,18 +45,22 @@ def distribute_teams(names):
 teams = distribute_teams(names)
 
 if names:
-    print(f"\nTeams have been generated but there are players left.\nRemaining names: {names}")
+    print(
+        f"\nTeams have been generated but there are players left.\nRemaining names: {names}"
+    )
 else:
     print(f"\nAll names have been successfully distributed")
 
-with open('teams.csv', 'w') as f:
+with open("teams.csv", "w") as f:
     writer = csv.writer(f)
-    writer.writerow(['Team', 'Size', '1', '2', '3', '4'])
+    writer.writerow(
+        ["Team", "Size"] + [str(i) for i in range(1, MAXIMUM_TEAM_SIZE + 1)]
+    )
     index = 1
     for size, team_list in teams.items():
         for i, team in enumerate(team_list, start=1):
-            writer.writerow([f'{index}', len(team), *team])
+            writer.writerow([f"{index}", len(team), *team])
             index += 1
 
     if names:
-        writer.writerow(['Remaining names', '', *names])
+        writer.writerow(["Remaining names", "", *names])
