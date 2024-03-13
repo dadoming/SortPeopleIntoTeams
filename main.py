@@ -119,16 +119,21 @@ def get_diff_tolerances(possibilities):
 		if perm not in seen_combinations:
 			seen_combinations.add(perm)
 			return perm
+			
 
 def icr_tolerances(tols):
 	j = 0
+	i = 0
 	newTol = tols
 	while True:
-		for i in tols:
-			if newTol[i] == j:
-				newTol[i] = i + 1
+		j = 0
+		while j < len(tols):
+			if newTol[j] == i:
+				newTol[j] = i + 1
 				return newTol
-		j += 1
+			j += 1
+		i += 1
+			
 	
 
 def init_tolerances():
