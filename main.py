@@ -1,6 +1,10 @@
 import csv
 import random
 
+# Begin of Added features
+from itertools import permutations
+# End of Added features
+
 MINIMUM_TEAM_SIZE = 4
 MAXIMUM_TEAM_SIZE = 4
 
@@ -23,9 +27,7 @@ i = 0
 fullLen = 0
 
 header = names[0].split(divisor)
-tolerances = names[len(names) - 1].split(divisor)
 names.pop(0)
-names.pop()
 
 for element in names:
 	saveNames.append(element)
@@ -108,26 +110,61 @@ def check_distribution(teams, fieldCol, threshold, exact):
 	return score
 
 def remove_quotes(string):
-    return string.replace('"', '').replace("'", '')
+	return string.replace('"', '').replace("'", '')
+
+def get_diff_tolerances(possibilities):
+	length = len(tolerances)
+
+	for perm in permutations(possibilities, length):
+		if perm not in seen_combinations:
+			seen_combinations.add(perm)
+			return perm
+
+def icr_tolerances(tols):
+	j = 0
+	newTol = tols
+	while True:
+		for i in tols:
+			if newTol[i] == j:
+				newTol[i] = i + 1
+				return newTol
+		j += 1
+	
+
+def init_tolerances():
+	head = []
+	tol = []
+	j = 1
+	f = 0
+	while j < len(header):
+		if header[j].find("RANGE") != -1:
+			tol.append(0)
+		if header[j].find("VALUES") != -1:
+			tol.append(0)
+		if header[j].find("FLAG") == -1:
+			tol.append(0)
+		j += 1
+	return tol
 
 def get_tolerance(limitType):
 	head = []
-	tol = []
 	limit = 0
 	j = 1
+	curlim = 0
 	while (j < len(header)):
-		if (header[j].find(limitType) == -1):
+		if header[j].find(limitType) == -1:
 			j += 1
 			continue
 		if header[j].find("|") != -1:
 			head = header[j].split('|')
-			tol = tolerances[j].split('|')
 			f = 0
+			if len(head) > 1:
+				curlim += len(head) - 1
 			while f < len(head) and remove_quotes(str(head[f])) != remove_quotes(str(limitType)):
 				f += 1
-			limit = int(tol[f])
+			limit = int(currentTol[f])
 		else:
-			limit = int(tolerances[j])
+			limit = int(currentTol[j - 1 + curlim])
 		j += 1
 	return limit
 
@@ -169,7 +206,7 @@ def check_values(array, tolerance, flag):
 				if i < j and abs(dict_values[i] - dict_values[j]) >= tolerance:
 					return 1
 		else:
-			if dict_values[j] > tolerance:
+			if dict_values[j] >= tolerance:
 				return 1
 	return 0
 
@@ -180,9 +217,15 @@ ranges = {}
 flags = {}
 values = {}
 
+seen_combinations = set()
+tolerances = init_tolerances()
+currentTol = get_diff_tolerances(tolerances)
+
 ranges = check_limiters(ranges, "RANGE", get_tolerance("RANGE"))
 flags = check_limiters(flags, "FLAG", get_tolerance("FLAG"))
 values = check_limiters(values, "VALUES", get_tolerance("VALUES"))
+
+round = 0
 
 while (check_values(ranges, get_tolerance("RANGE"), 1) or check_values(flags, get_tolerance("FLAG"), 0) or check_values(values, get_tolerance("VALUES"), 0)):
 	for element in saveNames:
@@ -193,10 +236,18 @@ while (check_values(ranges, get_tolerance("RANGE"), 1) or check_values(flags, ge
 	ranges.clear()
 	flags.clear()
 	values.clear()
+	round += 1
+	if round > 1000:
+		currentTol = get_diff_tolerances(tolerances)
+		if currentTol == None:
+			icr_tolerances(tolerances)
+			currentTol = get_diff_tolerances(tolerances)
+		round = 0
 	ranges = check_limiters(ranges, "RANGE", get_tolerance("RANGE"))
 	flags = check_limiters(flags, "FLAG", get_tolerance("FLAG"))
 	values = check_limiters(values, "VALUES", get_tolerance("VALUES"))
 
+print(f"Tolerances: {currentTol}")
 print(teams)
 # End of Added features
 
