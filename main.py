@@ -72,7 +72,7 @@ teams = distribute_teams(names)
 
 # Begin of Added features
 
-def check_differences(iter, array, threshold):
+def check_differences(array, threshold):
 	differences = []
 	dict_values = {}
 
@@ -179,12 +179,12 @@ def check_limiters(limiter, limitType, tolerance):
 			if limitType == "RANGE":
 				limiter[j] = check_distribution(teams, j, tolerance, 0)
 			elif limitType == "FLAG":
-				limiter[j].add(check_differences(j, check_distribution(teams, j, tolerance, 0), tolerance))
+				limiter[j].add(check_differences(check_distribution(teams, j, tolerance, 0), tolerance))
 			else:
 				k = 0
 				sum = 0
 				while(k <= 6):
-					sum += check_differences(j, check_distribution(teams, j, tolerance, 0), tolerance)
+					sum = check_differences(check_distribution(teams, j, tolerance, 0), tolerance)
 					k += 1
 				limiter[j].add(sum)
 		else:
@@ -192,22 +192,17 @@ def check_limiters(limiter, limitType, tolerance):
 		j += 1
 	return limiter
 
-def check_values(array, tolerance, flag):
+def check_values(array, tolerance):
 	differences = []
 	dict_values = {}
 
 	for size, arr in array.items():
 		for i, team in enumerate(arr):
 			dict_values[size] = team
-			
+	
 	for j in dict_values:
-		if flag:
-			for i in dict_values:
-				if i < j and abs(dict_values[i] - dict_values[j]) >= tolerance:
-					return 1
-		else:
-			if dict_values[j] >= tolerance:
-				return 1
+		if dict_values[j] >= tolerance:
+			return 1
 	return 0
 
 
@@ -227,7 +222,8 @@ values = check_limiters(values, "VALUES", get_tolerance("VALUES"))
 
 round = 0
 
-while (check_values(ranges, get_tolerance("RANGE"), 1) or check_values(flags, get_tolerance("FLAG"), 0) or check_values(values, get_tolerance("VALUES"), 0)):
+while (check_values(ranges, get_tolerance("RANGE")) or 
+check_values(flags, get_tolerance("FLAG")) or check_values(values, get_tolerance("VALUES"))):
 	for element in saveNames:
 		names.append(element)
 	teams.clear()
