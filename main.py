@@ -141,7 +141,6 @@ def get_diff_arrangement(currentTol):
 			flag = check_limiters(team, flag, "FLAG", get_tolerance("FLAG"))
 			value = check_limiters(team, value, "VALUE", get_tolerance("VALUE"))
 			if not check_values(ranging, get_tolerance("RANGE"), "RANGE") and not check_values(flag, get_tolerance("FLAG"), "FLAG") and not check_values(value, get_tolerance("VALUE"), "VALUE"):
-				print(f"{ranging},{flag},{value}")
 				return team
 		currentTol = get_diff_tolerances(tolerances)
 		if currentTol == None:
@@ -176,11 +175,11 @@ def init_tolerances():
 			sums += int(sname[j])
 		sums = (sums // math.ceil(len(saveNames) / MAXIMUM_TEAM_SIZE)) %  math.ceil(len(saveNames) / MAXIMUM_TEAM_SIZE)
 		if header[j].find("RANGE") != -1:
-			tol.append(sums // sums)
+			tol.append(math.floor(sums / 2))
 		if header[j].find("VALUE") != -1:
-			tol.append(sums // sums)
+			tol.append(math.floor(sums / 2))
 		if header[j].find("FLAG") != -1:
-			tol.append(sums // 2)
+			tol.append(sums % 2)
 		j += 1
 	return tol
 
