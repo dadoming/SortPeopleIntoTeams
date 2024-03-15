@@ -82,30 +82,37 @@ def check_differences(array, threshold):
 
 	for i in dict_values:
 		for j in dict_values:
-			if i <= j and abs(dict_values[i] - dict_values[j]) > threshold:
-				return 1
+				if i < j and abs(dict_values[i] - dict_values[j]) > threshold:
+					return 1
 	return 0
 
-def check_distribution(teams, fieldCol, threshold, exact):
+def check_distribution(teams, fieldCol, exact):
 	score = {}
 	k = 0
+	newNames = []
+	for name in saveNames:
+		newNames.append(name)
 	for size, team_list in teams.items():
 		for i, team in enumerate(team_list, start=0):
 			score[k] = set()
 			j = 0
-			sum = 0
+			sums = 0
 			while j < len(team):
-				values = team[j].split()
-				val = values[0]
-				for iter in vals:
-					if val[0] == iter[0]:
-						if not exact:
-							sum += int(iter[fieldCol])
+				value = team[j].split()
+				val = value[0]
+				i = 0
+				for iters in newNames:
+					if iters == val:
+						iteration = iters.split(divisor)
+						if exact == 0:
+							sums += int(iteration[fieldCol])
 						else:
-							if exact == int(iter[fieldCol]):
-								sum += 1
+							if exact == int(iteration[fieldCol]):
+								sums += 1
+						newNames.pop(i)
+					i += 1
 				j += 1
-			score[k].add(sum)
+			score[k].add(sums)
 			k += 1
 	return score
 
@@ -122,15 +129,19 @@ def get_diff_tolerances(possibilities):
 
 def get_diff_arrangement(currentTol):
 	team = {}
+	ranging = check_limiters(team, ranges, "RANGE", get_tolerance("RANGE"))
+	flag = check_limiters(team, flags, "FLAG", get_tolerance("FLAG"))
+	value = check_limiters(team, values, "VALUE", get_tolerance("VALUE"))
 	while True:
 		print(f"Tolerances: {currentTol}")
 		for perm in permutations(saveNames, len(saveNames)):
 			team.clear()
 			team = distribute_teams(list(perm))
-			ranging = check_limiters(team, ranges, "RANGE", get_tolerance("RANGE"))
-			flag = check_limiters(team, flags, "FLAG", get_tolerance("FLAG"))
-			value = check_limiters(team, values, "VALUES", get_tolerance("VALUES"))
-			if not check_values(ranging, get_tolerance("RANGES"), "RANGES") and not check_values(flag, get_tolerance("FLAG"), "FLAG") and not check_values(value, get_tolerance("VALUES"), "VALUES"):
+			ranging = check_limiters(team, ranging, "RANGE", get_tolerance("RANGE"))
+			flag = check_limiters(team, flag, "FLAG", get_tolerance("FLAG"))
+			value = check_limiters(team, value, "VALUE", get_tolerance("VALUE"))
+			if not check_values(ranging, get_tolerance("RANGE"), "RANGE") and not check_values(flag, get_tolerance("FLAG"), "FLAG") and not check_values(value, get_tolerance("VALUE"), "VALUE"):
+				print(f"{ranging},{flag},{value}")
 				return team
 		currentTol = get_diff_tolerances(tolerances)
 		if currentTol == None:
@@ -165,11 +176,11 @@ def init_tolerances():
 			sums += int(sname[j])
 		sums = (sums // math.ceil(len(saveNames) / MAXIMUM_TEAM_SIZE)) %  math.ceil(len(saveNames) / MAXIMUM_TEAM_SIZE)
 		if header[j].find("RANGE") != -1:
-			tol.append(sums)
-		if header[j].find("VALUES") != -1:
-			tol.append(sums)
-		if header[j].find("FLAG") == -1:
-			tol.append(sums)
+			tol.append(sums // sums)
+		if header[j].find("VALUE") != -1:
+			tol.append(sums // sums)
+		if header[j].find("FLAG") != -1:
+			tol.append(sums // 2)
 		j += 1
 	return tol
 
@@ -177,7 +188,6 @@ def get_tolerance(limitType):
 	head = []
 	limit = 0
 	j = 1
-	curlim = 0
 	while (j < len(header)):
 		if header[j].find(limitType) == -1:
 			j += 1
@@ -185,18 +195,16 @@ def get_tolerance(limitType):
 		if header[j].find("|") != -1:
 			head = header[j].split('|')
 			f = 0
-			if len(head) > 1:
-				curlim += len(head) - 1
 			while f < len(head) and remove_quotes(str(head[f])) != remove_quotes(str(limitType)):
 				f += 1
 			limit = int(currentTol[f])
 		else:
-			limit = int(currentTol[j - 1 + curlim])
+			limit = int(currentTol[j])
 		j += 1
 	return limit
 
 def check_limiters(team, limiter, limitType, tolerance):
-	j = 0
+	j = 1
 	position = 0
 	while (j < len(header)):
 		position = header[j].find(limitType, position)
@@ -204,16 +212,16 @@ def check_limiters(team, limiter, limitType, tolerance):
 		if (position != -1):
 			limiter[j] = set()
 			if limitType == "RANGE":
-				limiter[j] = check_distribution(team, j, tolerance, 0)
+				limiter[j] = check_distribution(team, j, 0)
 			elif limitType == "FLAG":
-				limiter[j].add(check_differences(check_distribution(team, j, tolerance, 0), tolerance))
+				limiter[j].add(check_differences(check_distribution(team, j, 0), tolerance))
 			else:
-				k = 0
-				sum = 0
+				k = 1
+				sums = 0
 				while(k <= 6):
-					sum = check_differences(check_distribution(team, j, tolerance, 0), tolerance)
+					sums += check_differences(check_distribution(team, j, k), tolerance)
 					k += 1
-				limiter[j].add(sum)
+				limiter[j].add(sums)
 		else:
 			position = 0
 		j += 1
@@ -227,9 +235,9 @@ def check_values(array, tolerance, limitType):
 		for i, team in enumerate(arr):
 			dict_values[size] = team
 	for j in dict_values:
-		if limitType == "RANGES":
+		if limitType == "RANGE":
 			for i in dict_values:
-				if i < j and abs(dict_values[i] - dict_values[j]) > threshold:
+				if i < j and abs(dict_values[i] - dict_values[j]) > tolerance:
 					return 1
 		else:
 			if dict_values[j] > tolerance:
@@ -250,7 +258,7 @@ currentTol = get_diff_tolerances(tolerances)
 
 ranges = check_limiters(teams, ranges, "RANGE", get_tolerance("RANGE"))
 flags = check_limiters(teams, flags, "FLAG", get_tolerance("FLAG"))
-values = check_limiters(teams, values, "VALUES", get_tolerance("VALUES"))
+values = check_limiters(teams, values, "VALUE", get_tolerance("VALUE"))
 
 teams.clear()
 teams = get_diff_arrangement(currentTol)
