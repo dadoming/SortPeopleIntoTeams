@@ -129,18 +129,15 @@ def get_diff_tolerances(possibilities):
 
 def get_diff_arrangement(currentTol):
 	team = {}
-	ranging = check_limiters(team, ranges, "RANGE", get_tolerance("RANGE"))
-	flag = check_limiters(team, flags, "FLAG", get_tolerance("FLAG"))
-	value = check_limiters(team, values, "VALUE", get_tolerance("VALUE"))
 	while True:
 		print(f"Tolerances: {currentTol}")
 		for perm in permutations(saveNames, len(saveNames)):
 			team.clear()
 			team = distribute_teams(list(perm))
-			ranging = check_limiters(team, ranging, "RANGE", get_tolerance("RANGE"))
-			flag = check_limiters(team, flag, "FLAG", get_tolerance("FLAG"))
-			value = check_limiters(team, value, "VALUE", get_tolerance("VALUE"))
-			if not check_values(ranging, get_tolerance("RANGE"), "RANGE") and not check_values(flag, get_tolerance("FLAG"), "FLAG") and not check_values(value, get_tolerance("VALUE"), "VALUE"):
+			ranges = check_limiters(team, {}, "RANGE", get_tolerance("RANGE"))
+			flags = check_limiters(team, {}, "FLAG", get_tolerance("FLAG"))
+			values = check_limiters(team, {}, "VALUE", get_tolerance("VALUE"))
+			if not check_values(ranges, get_tolerance("RANGE"), "RANGE") and not check_values(flags, get_tolerance("FLAG"), "FLAG") and not check_values(values, get_tolerance("VALUE"), "VALUE"):
 				return team
 		currentTol = get_diff_tolerances(tolerances)
 		if currentTol == None:
@@ -173,13 +170,24 @@ def init_tolerances():
 		for name in saveNames:
 			sname = name.split(',')
 			sums += int(sname[j])
-		sums = (sums // math.ceil(len(saveNames) / MAXIMUM_TEAM_SIZE)) %  math.ceil(len(saveNames) / MAXIMUM_TEAM_SIZE)
+		sums = (sums % math.ceil(len(saveNames) // MAXIMUM_TEAM_SIZE))
 		if header[j].find("RANGE") != -1:
-			tol.append(math.floor(sums / 2))
+			tol.append(math.floor(sums))
 		if header[j].find("VALUE") != -1:
-			tol.append(math.floor(sums / 2))
+			k = 1
+			allsum = []
+			while k <= 6:
+				sums = 0
+				for name in saveNames:
+					sname = name.split(',')
+					if int(sname[j]) == k:
+						sums += 1
+				allsum.append(sums)
+				k += 1
+			t = 0
+			tol.append(abs(max(allsum) - min(allsum) + 1))
 		if header[j].find("FLAG") != -1:
-			tol.append(sums % 2)
+			tol.append(math.floor(sums))
 		j += 1
 	return tol
 
@@ -218,7 +226,7 @@ def check_limiters(team, limiter, limitType, tolerance):
 				k = 1
 				sums = 0
 				while(k <= 6):
-					sums += check_differences(check_distribution(team, j, k), tolerance)
+					sums = check_differences(check_distribution(team, j, k), tolerance + 1)
 					k += 1
 				limiter[j].add(sums)
 		else:
@@ -255,12 +263,9 @@ seen_combinations = set()
 tolerances = init_tolerances()
 currentTol = get_diff_tolerances(tolerances)
 
-ranges = check_limiters(teams, ranges, "RANGE", get_tolerance("RANGE"))
-flags = check_limiters(teams, flags, "FLAG", get_tolerance("FLAG"))
-values = check_limiters(teams, values, "VALUE", get_tolerance("VALUE"))
-
-teams.clear()
-teams = get_diff_arrangement(currentTol)
+if not names:
+	teams.clear()
+	teams = get_diff_arrangement(currentTol)
 
 print(teams)
 # End of Added features
