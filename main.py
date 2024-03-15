@@ -45,6 +45,7 @@ for element in names:
 # End of added features
 
 random.shuffle(names)
+random.shuffle(saveNames)
 
 total_names = len(names)
 if MINIMUM_TEAM_SIZE > len(names):
@@ -72,18 +73,14 @@ teams = distribute_teams(names)
 
 # Begin of Added features
 
-def check_differences(array, threshold):
+def check_differences(array, threshold, limitType):
 	differences = []
-	dict_values = {}
 
-	for size, arr in array.items():
-		for i, team in enumerate(arr):
-			dict_values[size] = team
-
-	for i in dict_values:
-		for j in dict_values:
-				if i < j and abs(dict_values[i] - dict_values[j]) > threshold:
-					return 1
+	for s, arr in array.items():
+		for a in arr:
+	 	   differences.append(a)
+	if max(differences) - min(differences) > threshold:
+		return 1
 	return 0
 
 def check_distribution(teams, fieldCol, exact):
@@ -100,7 +97,7 @@ def check_distribution(teams, fieldCol, exact):
 			while j < len(team):
 				value = team[j].split()
 				val = value[0]
-				i = 0
+				f = 0
 				for iters in newNames:
 					if iters == val:
 						iteration = iters.split(divisor)
@@ -109,8 +106,8 @@ def check_distribution(teams, fieldCol, exact):
 						else:
 							if exact == int(iteration[fieldCol]):
 								sums += 1
-						newNames.pop(i)
-					i += 1
+						newNames.pop(f)
+					f += 1
 				j += 1
 			score[k].add(sums)
 			k += 1
@@ -170,7 +167,7 @@ def init_tolerances():
 		for name in saveNames:
 			sname = name.split(',')
 			sums += int(sname[j])
-		sums = (sums % math.ceil(len(saveNames) // MAXIMUM_TEAM_SIZE))
+		sums = (sums % (math.ceil(len(saveNames) // MAXIMUM_TEAM_SIZE)))
 		if header[j].find("RANGE") != -1:
 			tol.append(math.floor(sums))
 		if header[j].find("VALUE") != -1:
@@ -182,10 +179,12 @@ def init_tolerances():
 					sname = name.split(',')
 					if int(sname[j]) == k:
 						sums += 1
-				allsum.append(sums)
+				newsum = sums % (math.ceil(len(saveNames) // MAXIMUM_TEAM_SIZE))
+				if newsum > 0:
+					allsum.append(1)
 				k += 1
 			t = 0
-			tol.append(abs(max(allsum) - min(allsum) + 1))
+			tol.append(sum(allsum) % (math.ceil(len(saveNames) // MAXIMUM_TEAM_SIZE)))
 		if header[j].find("FLAG") != -1:
 			tol.append(math.floor(sums))
 		j += 1
@@ -195,18 +194,21 @@ def get_tolerance(limitType):
 	head = []
 	limit = 0
 	j = 1
+	curlim = 0
 	while (j < len(header)):
 		if header[j].find(limitType) == -1:
 			j += 1
 			continue
 		if header[j].find("|") != -1:
 			head = header[j].split('|')
+			if (len(head) > 1):
+				curlim = len(head) - 1
 			f = 0
 			while f < len(head) and remove_quotes(str(head[f])) != remove_quotes(str(limitType)):
 				f += 1
 			limit = int(currentTol[f])
 		else:
-			limit = int(currentTol[j])
+			limit = int(currentTol[j - 1 + curlim])
 		j += 1
 	return limit
 
@@ -221,12 +223,12 @@ def check_limiters(team, limiter, limitType, tolerance):
 			if limitType == "RANGE":
 				limiter[j] = check_distribution(team, j, 0)
 			elif limitType == "FLAG":
-				limiter[j].add(check_differences(check_distribution(team, j, 0), tolerance))
+				limiter[j].add(check_differences(check_distribution(team, j, 0), tolerance, limitType))
 			else:
 				k = 1
 				sums = 0
 				while(k <= 6):
-					sums = check_differences(check_distribution(team, j, k), tolerance + 1)
+					sums = check_differences(check_distribution(team, j, k), tolerance, limitType)
 					k += 1
 				limiter[j].add(sums)
 		else:
@@ -234,20 +236,23 @@ def check_limiters(team, limiter, limitType, tolerance):
 		j += 1
 	return limiter
 
-def check_values(array, tolerance, limitType):
-	differences = []
-	dict_values = {}
+def check_values(teams, tolerance, limitType):
+	array = []
 
-	for size, arr in array.items():
-		for i, team in enumerate(arr):
-			dict_values[size] = team
-	for j in dict_values:
-		if limitType == "RANGE":
-			for i in dict_values:
-				if i < j and abs(dict_values[i] - dict_values[j]) > tolerance:
-					return 1
+	for key, inner_dict in teams.items():
+		if (limitType == "RANGE"):
+			for inner_key, set_value in inner_dict.items():
+				for v in set_value:
+					array.append(v)
 		else:
-			if dict_values[j] > tolerance:
+			for set_value in inner_dict:
+				array.append(set_value)
+	if len(array) > 1 and limitType == "RANGE":
+		if max(array) - min(array) > tolerance:
+			return 1
+	else:
+		for f in array:
+			if f > tolerance:
 				return 1
 	return 0
 
@@ -255,9 +260,6 @@ def check_values(array, tolerance, limitType):
 j = 0
 position = 0
 arrange = 0
-ranges = {}
-flags = {}
-values = {}
 
 seen_combinations = set()
 tolerances = init_tolerances()

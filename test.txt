@@ -1,13 +1,13 @@
 ID,VALUE|RANGE,FLAG
-Ana,5,1
+Ana,5,0
 Beatriz,4,0
 Carolina,3,1
 David,2,0
-Elder,3,0
+Elder,3,1
 Filipe,5,0
 Guilherme,4,1
 Hugo,2,1
-Iris,6,0
-Jonas,1,1
+Iris,5,0
+Jonas,2,1
 Kate,4,0
 Luis,3,1
