@@ -117,7 +117,7 @@ def remove_quotes(string):
 	return string.replace('"', '').replace("'", '')
 
 def get_diff_tolerances(possibilities):
-	length = len(tolerances)
+	length = len(possibilities)
 
 	for perm in permutations(possibilities, length):
 		if perm not in seen_combinations:
@@ -140,7 +140,7 @@ def trim_set(listing, seen):
 	random.shuffle(finalListing)
 	return finalListing
 
-def get_diff_arrangement(currentTol):
+def get_diff_arrangement():
 	team = {}
 	seen_arrangements = set()
 	seenElements = set()
@@ -177,8 +177,13 @@ def get_diff_arrangement(currentTol):
 			valid = True
 		if valid:
 			valid_permutations.append(perm)
+	
+	tolerances = init_tolerances(len(newList))
+	curTol = get_diff_tolerances(tolerances)
+
 	while True:
-		print(f"Tolerances: {currentTol}")
+		print(f"Tolerances: {curTol}")
+		seen_arrangements.clear()
 		for perm in valid_permutations:
 			if perm not in seen_arrangements:
 				seen_arrangements.add(perm)
@@ -186,14 +191,15 @@ def get_diff_arrangement(currentTol):
 				continue
 			team.clear()
 			team = distribute_teams(list(perm), MAXIMUM_TEAM_SIZE - len(seenElements))
-			ranges = check_limiters(team, "RANGE", get_tolerance("RANGE"))
-			flags = check_limiters(team, "FLAG", get_tolerance("FLAG"))
-			values = check_limiters(team, "VALUE", get_tolerance("VALUE"))
-			if not check_values(ranges, get_tolerance("RANGE"), "RANGE") and not check_values(flags, get_tolerance("FLAG"), "FLAG") and not check_values(values, get_tolerance("VALUE"), "VALUE"):
+			ranges = check_limiters(team, "RANGE", get_tolerance("RANGE", curTol))
+			flags = check_limiters(team, "FLAG", get_tolerance("FLAG", curTol))
+			values = check_limiters(team, "VALUE", get_tolerance("VALUE", curTol))
+			if not check_values(ranges, get_tolerance("RANGE", curTol), "RANGE") and not check_values(flags, get_tolerance("FLAG", curTol), "FLAG") and not check_values(values, get_tolerance("VALUE", curTol), "VALUE"):
 				finalTeam = []
 				t = 0
 				i = 0
-				while t < teamSizes:
+				maxSize = len(allNames) // MAXIMUM_TEAM_SIZE
+				while t < maxSize:
 					for s in seenElements:
 						j = 0
 						for name in allNames:
@@ -206,7 +212,7 @@ def get_diff_arrangement(currentTol):
 									break
 							j += 1
 					f = 0
-					while f <= MAXIMUM_TEAM_SIZE - len(seenElements):
+					while f < teamSizes:
 						j = 0
 						for name in allNames:
 							sname = name.find(',')
@@ -215,6 +221,7 @@ def get_diff_arrangement(currentTol):
 								if perm[i] == name[sname:]:
 									finalTeam.append(name)
 									allNames.pop(j)
+									break
 							j += 1
 						i += 1
 						f += 1
@@ -222,10 +229,10 @@ def get_diff_arrangement(currentTol):
 				team.clear()
 				team = distribute_teams(finalTeam, 0)
 				return team
-		currentTol = get_diff_tolerances(tolerances)
-		if currentTol == None:
+		curTol = get_diff_tolerances(tolerances)
+		if curTol == None:
 			icr_tolerances(tolerances)
-			currentTol = get_diff_tolerances(tolerances)
+			curTol = get_diff_tolerances(tolerances)
 
 
 
@@ -242,7 +249,7 @@ def icr_tolerances(tols):
 			j += 1
 		i += 1
 
-def init_tolerances():
+def init_tolerances(listLen):
 	head = []
 	tol = []
 	j = 1
@@ -253,7 +260,7 @@ def init_tolerances():
 		for name in saveNames:
 			sname = name.split(',')
 			sums += int(sname[j])
-		sums = (sums % (math.ceil(len(saveNames) // MAXIMUM_TEAM_SIZE)))
+		sums = (sums % (math.ceil(listLen // MAXIMUM_TEAM_SIZE)))
 		if header[j].find("RANGE") != -1:
 			tol.append(math.floor(sums))
 		if header[j].find("VALUE") != -1:
@@ -265,18 +272,18 @@ def init_tolerances():
 					sname = name.split(',')
 					if int(sname[j]) == k:
 						sums += 1
-				newsum = sums % (math.ceil(len(saveNames) // MAXIMUM_TEAM_SIZE))
+				newsum = sums % (math.ceil(listLen // MAXIMUM_TEAM_SIZE))
 				if newsum > 0:
 					allsum.append(1)
 				k += 1
 			t = 0
-			tol.append(sum(allsum) % (math.ceil(len(saveNames) // MAXIMUM_TEAM_SIZE)))
+			tol.append(sum(allsum) % (math.ceil(listLen // MAXIMUM_TEAM_SIZE)))
 		if header[j].find("FLAG") != -1:
 			tol.append(math.floor(sums))
 		j += 1
 	return tol
 
-def get_tolerance(limitType):
+def get_tolerance(limitType, currentTol):
 	head = []
 	limit = 0
 	j = 1
@@ -337,12 +344,10 @@ position = 0
 arrange = 0
 
 seen_combinations = set()
-tolerances = init_tolerances()
-currentTol = get_diff_tolerances(tolerances)
 
 if not names:
 	teams.clear()
-	teams = get_diff_arrangement(currentTol)
+	teams = get_diff_arrangement()
 
 print(teams)
 # End of Added features
