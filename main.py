@@ -156,22 +156,20 @@ def get_diff_arrangement(currentTol):
 			newList.append(name[sname:])
 	newList = trim_set(newList, seenElements)
 
+	teamSizes = len(newList) // (MAXIMUM_TEAM_SIZE - len(seenElements))
 	allPerm = permutations(newList)
 	valid_permutations = []
 	seenSets = set()
 	for perm in allPerm:
 		valid = False
-		teamSizes = len(perm) // (MAXIMUM_TEAM_SIZE - len(seenElements))
 		i = 0
 		newTeamSet = []
 		while i < len(perm):
 			sums = 0
-			f = 0
 			newTeam = []
-			while f < teamSizes - 1:
+			while len(newTeam) < teamSizes:
 				newTeam.append(perm[i])
 				newTeam = sorted(newTeam, key=custom_sort_key)
-				f += 1
 				i += 1
 			newTeamSet.append(tuple(newTeam))
 		if tuple(newTeamSet) not in seenSets:
@@ -179,7 +177,6 @@ def get_diff_arrangement(currentTol):
 			valid = True
 		if valid:
 			valid_permutations.append(perm)
-	
 	while True:
 		print(f"Tolerances: {currentTol}")
 		for perm in valid_permutations:
