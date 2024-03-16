@@ -125,8 +125,7 @@ def get_diff_tolerances(possibilities):
 			return perm
 
 def custom_sort_key(item):
-    first, second = item.split(',')
-    return (first, second)
+    return tuple(item.split(','))
 
 def trim_set(listing, seen):
 	newListing = sorted(listing, key=lambda x: x[0], reverse=True)
@@ -194,7 +193,6 @@ def get_diff_arrangement(currentTol):
 			flags = check_limiters(team, "FLAG", get_tolerance("FLAG"))
 			values = check_limiters(team, "VALUE", get_tolerance("VALUE"))
 			if not check_values(ranges, get_tolerance("RANGE"), "RANGE") and not check_values(flags, get_tolerance("FLAG"), "FLAG") and not check_values(values, get_tolerance("VALUE"), "VALUE"):
-				print(perm)
 				finalTeam = []
 				t = 0
 				i = 0
