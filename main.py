@@ -55,8 +55,11 @@ if MINIMUM_TEAM_SIZE > len(names):
 print(f"Total:\t{total_names} names")
 print(f"Sizes:\t{MINIMUM_TEAM_SIZE}-{MAXIMUM_TEAM_SIZE} people")
 
-def distribute_teams(names):
-	team_sizes = list(range(MAXIMUM_TEAM_SIZE, MINIMUM_TEAM_SIZE - 1, -1))
+def distribute_teams(names, newSize):	
+	if newSize == 0:
+		team_sizes = list(range(MAXIMUM_TEAM_SIZE, MINIMUM_TEAM_SIZE - 1, -1))
+	else:
+		team_sizes = list(range(newSize, newSize - 1, -1))
 	teams = {size: [] for size in team_sizes}
 	for size in team_sizes:
 		while len(names) >= size:
@@ -68,37 +71,33 @@ def distribute_teams(names):
 	return teams
 
 
-teams = distribute_teams(names)
+teams = distribute_teams(names, 0)
 
 
 # Begin of Added features
 
 def check_differences(array, threshold, limitType):
-	differences = []
-
-	for s, arr in array.items():
-		for a in arr:
-	 	   differences.append(a)
-	if max(differences) - min(differences) > threshold:
+	if max(array) - min(array) > threshold:
 		return 1
 	return 0
 
 def check_distribution(teams, fieldCol, exact):
-	score = {}
+	score = []
 	k = 0
-	newNames = []
+	listing = []
 	for name in saveNames:
-		newNames.append(name)
+		sname = name.find(',')
+		if sname != -1:
+			sname += 1
+			listing.append(name[sname:])
 	for size, team_list in teams.items():
 		for i, team in enumerate(team_list, start=0):
-			score[k] = set()
 			j = 0
 			sums = 0
 			while j < len(team):
-				value = team[j].split()
-				val = value[0]
+				val = team[j]
 				f = 0
-				for iters in newNames:
+				for iters in listing:
 					if iters == val:
 						iteration = iters.split(divisor)
 						if exact == 0:
@@ -106,10 +105,11 @@ def check_distribution(teams, fieldCol, exact):
 						else:
 							if exact == int(iteration[fieldCol]):
 								sums += 1
-						newNames.pop(f)
+						listing.pop(f)
+						break
 					f += 1
 				j += 1
-			score[k].add(sums)
+			score.append(sums)
 			k += 1
 	return score
 
@@ -124,17 +124,108 @@ def get_diff_tolerances(possibilities):
 			seen_combinations.add(perm)
 			return perm
 
+def custom_sort_key(item):
+    first, second = item.split(',')
+    return (first, second)
+
+def trim_set(listing, seen):
+	newListing = sorted(listing, key=lambda x: x[0], reverse=True)
+	finalListing = []
+	i = 0
+	for entry in newListing:
+		count = newListing.count(entry)
+		if count == math.ceil(len(listing) // MAXIMUM_TEAM_SIZE) and entry not in seen:
+			seen.add(entry)
+		i += 1
+	finalListing = [x for x in newListing if x not in seen]
+	random.shuffle(finalListing)
+	return finalListing
+
 def get_diff_arrangement(currentTol):
 	team = {}
+	seen_arrangements = set()
+	seenElements = set()
+	newList = []
+	newNames = []
+	allNames = []
+	for name in saveNames:
+		allNames.append(name)
+		sname = name.find(',')
+		if sname != -1:
+			newNames.append(name[:sname])
+			sname += 1
+			newList.append(name[sname:])
+	newList = trim_set(newList, seenElements)
+
+	allPerm = permutations(newList)
+	valid_permutations = []
+	seenSets = set()
+	for perm in allPerm:
+		valid = False
+		teamSizes = len(perm) // (MAXIMUM_TEAM_SIZE - len(seenElements))
+		i = 0
+		newTeamSet = []
+		while i < len(perm):
+			sums = 0
+			f = 0
+			newTeam = []
+			while f < teamSizes - 1:
+				newTeam.append(perm[i])
+				newTeam = sorted(newTeam, key=custom_sort_key)
+				f += 1
+				i += 1
+			newTeamSet.append(tuple(newTeam))
+		if tuple(newTeamSet) not in seenSets:
+			seenSets.add(tuple(newTeamSet))
+			valid = True
+		if valid:
+			valid_permutations.append(perm)
+	
 	while True:
 		print(f"Tolerances: {currentTol}")
-		for perm in permutations(saveNames, len(saveNames)):
+		for perm in valid_permutations:
+			if perm not in seen_arrangements:
+				seen_arrangements.add(perm)
+			else:
+				continue
 			team.clear()
-			team = distribute_teams(list(perm))
-			ranges = check_limiters(team, {}, "RANGE", get_tolerance("RANGE"))
-			flags = check_limiters(team, {}, "FLAG", get_tolerance("FLAG"))
-			values = check_limiters(team, {}, "VALUE", get_tolerance("VALUE"))
+			team = distribute_teams(list(perm), MAXIMUM_TEAM_SIZE - len(seenElements))
+			ranges = check_limiters(team, "RANGE", get_tolerance("RANGE"))
+			flags = check_limiters(team, "FLAG", get_tolerance("FLAG"))
+			values = check_limiters(team, "VALUE", get_tolerance("VALUE"))
 			if not check_values(ranges, get_tolerance("RANGE"), "RANGE") and not check_values(flags, get_tolerance("FLAG"), "FLAG") and not check_values(values, get_tolerance("VALUE"), "VALUE"):
+				print(perm)
+				finalTeam = []
+				t = 0
+				i = 0
+				while t < teamSizes:
+					for s in seenElements:
+						j = 0
+						for name in allNames:
+							sname = name.find(',')
+							if sname != -1:
+								sname += 1
+								if s == name[sname:]:
+									finalTeam.append(name)
+									allNames.pop(j)
+									break
+							j += 1
+					f = 0
+					while f <= MAXIMUM_TEAM_SIZE - len(seenElements):
+						j = 0
+						for name in allNames:
+							sname = name.find(',')
+							if sname != -1:
+								sname += 1
+								if perm[i] == name[sname:]:
+									finalTeam.append(name)
+									allNames.pop(j)
+							j += 1
+						i += 1
+						f += 1
+					t += 1
+				team.clear()
+				team = distribute_teams(finalTeam, 0)
 				return team
 		currentTol = get_diff_tolerances(tolerances)
 		if currentTol == None:
@@ -212,48 +303,37 @@ def get_tolerance(limitType):
 		j += 1
 	return limit
 
-def check_limiters(team, limiter, limitType, tolerance):
+def check_limiters(team, limitType, tolerance):
 	j = 1
 	position = 0
+	limiter = []
 	while (j < len(header)):
 		position = header[j].find(limitType, position)
 		limit = 0
 		if (position != -1):
-			limiter[j] = set()
 			if limitType == "RANGE":
-				limiter[j] = check_distribution(team, j, 0)
+				limiter = check_distribution(team, j - 1, 0)
 			elif limitType == "FLAG":
-				limiter[j].add(check_differences(check_distribution(team, j, 0), tolerance, limitType))
+				limiter.append(check_differences(check_distribution(team, j - 1, 0), tolerance, limitType))
 			else:
 				k = 1
 				sums = 0
 				while(k <= 6):
-					sums = check_differences(check_distribution(team, j, k), tolerance, limitType)
+					sums = check_differences(check_distribution(team, j - 1, k), tolerance, limitType)
 					k += 1
-				limiter[j].add(sums)
+				limiter.append(sums)
 		else:
 			position = 0
 		j += 1
 	return limiter
 
-def check_values(teams, tolerance, limitType):
-	array = []
-
-	for key, inner_dict in teams.items():
-		if (limitType == "RANGE"):
-			for inner_key, set_value in inner_dict.items():
-				for v in set_value:
-					array.append(v)
-		else:
-			for set_value in inner_dict:
-				array.append(set_value)
+def check_values(array, tolerance, limitType):
 	if len(array) > 1 and limitType == "RANGE":
 		if max(array) - min(array) > tolerance:
 			return 1
 	else:
-		for f in array:
-			if f > tolerance:
-				return 1
+		if max(array) > tolerance:
+			return 1
 	return 0
 
 
