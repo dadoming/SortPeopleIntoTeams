@@ -145,20 +145,19 @@ def check_final_differences(array, tolerance):
 
 # Tolerance Management
 
-def init_tolerances(listLen):
-	head = []
+def init_tolerances(listing, sizes):
 	tol = []
-	j = 1
+	j = 0
 	f = 0
 	sums = 0
-	while j < len(header):
+	while j < len(header) - 1:
 		sums = 0
-		for name in saveNames:
+		for name in listing:
 			sname = name.split(',')
 			sums += int(sname[j])
-		sums = (sums % (math.ceil(listLen // MAXIMUM_TEAM_SIZE)))
-		tol.append(math.floor(sums))
 		j += 1
+		sums = (sums % sizes)
+		tol.append(math.floor(sums))
 	return tol
 
 def get_diff_tolerances(possibilities):
@@ -182,11 +181,60 @@ def icr_tolerances(tols):
 			j += 1
 		i += 1
 
+def updateTolerances():
+	curTol = []
+	curTol = get_diff_tolerances(tolerances)
+	if curTol == None:
+		icr_tolerances(tolerances)
+		curTol = get_diff_tolerances(tolerances)
+	return curTol
+
 seen_combinations = set()
 
 
 
 # Main Sorting Function
+
+def gen_result(perm, allSet, teamSizes, seenElements):
+	team = {}
+	allNames = []
+	finalTeam = []
+	t = 0
+	i = 0
+	for name in allSet:
+		allNames.append(name)
+	maxSize = len(allNames) // MAXIMUM_TEAM_SIZE
+
+	while t < maxSize:
+		for s in seenElements:
+			j = 0
+			for name in allNames:
+				sname = name.find(',')
+				if sname != -1:
+					sname += 1
+					if s == name[sname:]:
+						finalTeam.append(name)
+						allNames.pop(j)
+						break
+				j += 1
+		f = 0
+		while f < teamSizes:
+			j = 0
+			for name in allNames:
+				sname = name.find(',')
+				if sname != -1:
+					sname += 1
+					if perm[i] == name[sname:]:
+						finalTeam.append(name)
+						allNames.pop(j)
+						break
+				j += 1
+			i += 1
+			f += 1
+		t += 1
+	team.clear()
+	team = distribute_teams(finalTeam, 0)
+	return team
 
 def get_diff_arrangement():
 	team = {}
@@ -206,6 +254,9 @@ def get_diff_arrangement():
 	newList = trim_set(newList, seenElements)
 
 	teamSizes = len(newList) // (MAXIMUM_TEAM_SIZE - len(seenElements))
+	tolerances = init_tolerances(newList, teamSizes)
+	curTol = get_diff_tolerances(tolerances)
+
 	allPerm = permutations(newList)
 	valid_permutations = []
 	seenSets = set()
@@ -226,10 +277,11 @@ def get_diff_arrangement():
 			valid = True
 		if valid:
 			valid_permutations.append(perm)
-	
-	tolerances = init_tolerances(len(newList))
-	curTol = get_diff_tolerances(tolerances)
-
+			team.clear()
+			team = distribute_teams(list(perm), MAXIMUM_TEAM_SIZE - len(seenElements))
+			if not check_final_differences(check_limiters(team, curTol), curTol):
+				return gen_result(perm, allNames, teamSizes, seenElements)
+	curTol = updateTolerances()
 	while True:
 		print(f"Tolerances: {curTol}")
 		seen_arrangements.clear()
@@ -241,44 +293,8 @@ def get_diff_arrangement():
 			team.clear()
 			team = distribute_teams(list(perm), MAXIMUM_TEAM_SIZE - len(seenElements))
 			if not check_final_differences(check_limiters(team, curTol), curTol):
-				finalTeam = []
-				t = 0
-				i = 0
-				maxSize = len(allNames) // MAXIMUM_TEAM_SIZE
-				while t < maxSize:
-					for s in seenElements:
-						j = 0
-						for name in allNames:
-							sname = name.find(',')
-							if sname != -1:
-								sname += 1
-								if s == name[sname:]:
-									finalTeam.append(name)
-									allNames.pop(j)
-									break
-							j += 1
-					f = 0
-					while f < teamSizes:
-						j = 0
-						for name in allNames:
-							sname = name.find(',')
-							if sname != -1:
-								sname += 1
-								if perm[i] == name[sname:]:
-									finalTeam.append(name)
-									allNames.pop(j)
-									break
-							j += 1
-						i += 1
-						f += 1
-					t += 1
-				team.clear()
-				team = distribute_teams(finalTeam, 0)
-				return team
-		curTol = get_diff_tolerances(tolerances)
-		if curTol == None:
-			icr_tolerances(tolerances)
-			curTol = get_diff_tolerances(tolerances)
+				return gen_result(perm, allNames, teamSizes, seenElements)
+		curTol = updateTolerances()
 
 
 if not names:
