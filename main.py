@@ -100,7 +100,6 @@ def check_limiters(team, tolerance):
 
 def check_distribution(teams, fieldCol):
 	score = []
-	k = 0
 	listing = []
 	for name in saveNames:
 		sname = name.find(',')
@@ -123,7 +122,6 @@ def check_distribution(teams, fieldCol):
 					f += 1
 				j += 1
 			score.append(sums)
-			k += 1
 	return score
 
 
